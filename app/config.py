@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    openai_api_key: str = ""
+    gemini_api_key: str = ""
     
     upload_dir: str = "./uploads"
     vector_db_path: str = "./data/chroma_db"
