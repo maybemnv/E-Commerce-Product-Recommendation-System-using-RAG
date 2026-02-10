@@ -19,7 +19,7 @@ class QAService:
         self.vector_store = vector_store
         if settings.gemini_api_key:
             genai.configure(api_key=settings.gemini_api_key)
-            self.model = genai.GenerativeModel('gemini-3-flash-preview')
+            self.model = genai.GenerativeModel('gemini-2.5-flash-lite')
         else:
             self.model = None
     
