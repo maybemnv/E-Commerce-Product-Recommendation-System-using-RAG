@@ -10,15 +10,6 @@ from app.config import settings
 
 
 async def save_uploaded_file(file: UploadFile) -> str:
-    """
-    Save an uploaded file to disk with a unique filename.
-    
-    Args:
-        file (UploadFile): The uploaded file object.
-        
-    Returns:
-        str: The absolute path to the saved file.
-    """
     os.makedirs(settings.upload_dir, exist_ok=True)
     
     file_extension = Path(file.filename).suffix
@@ -33,7 +24,6 @@ async def save_uploaded_file(file: UploadFile) -> str:
 
 
 def extract_text_from_pdf(file_path: str) -> str:
-    """Extract text content from a PDF file."""
     text = []
     with open(file_path, "rb") as f:
         pdf_reader = PyPDF2.PdfReader(f)
@@ -45,32 +35,16 @@ def extract_text_from_pdf(file_path: str) -> str:
 
 
 def extract_text_from_txt(file_path: str) -> str:
-    """Extract text content from a plain text file."""
     with open(file_path, "r", encoding="utf-8") as f:
         return f.read()
 
 
 def extract_text_from_docx(file_path: str) -> str:
-    """Extract text content from a DOCX file."""
     doc = Document(file_path)
     return "\n".join([paragraph.text for paragraph in doc.paragraphs])
 
 
 def extract_text(file_path: str) -> str:
-    """
-    Extract text from a file based on its extension.
-    
-    Supported extensions: .pdf, .txt, .docx
-    
-    Args:
-        file_path (str): Path to the file.
-        
-    Returns:
-        str: Extracted text content.
-        
-    Raises:
-        ValueError: If file type is not supported.
-    """
     extension = Path(file_path).suffix.lower()
     
     extractors = {
@@ -87,17 +61,6 @@ def extract_text(file_path: str) -> str:
 
 
 def chunk_text(text: str, chunk_size: int = None, overlap: int = None) -> List[str]:
-    """
-    Split text into overlapping chunks.
-    
-    Args:
-        text (str): The input text to chunk.
-        chunk_size (int, optional): Size of each chunk in words. Defaults to setting.
-        overlap (int, optional): Number of overlapping words. Defaults to setting.
-        
-    Returns:
-        List[str]: List of text chunks.
-    """
     if chunk_size is None:
         chunk_size = settings.chunk_size
     if overlap is None:

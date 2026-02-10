@@ -6,16 +6,7 @@ from app.services.vector_store import VectorStore
 
 
 class QAService:
-    """
-    Service for Question Answering using Retrieval-Augmented Generation (RAG).
-    """
     def __init__(self, vector_store: VectorStore):
-        """
-        Initialize the QA Service.
-        
-        Args:
-            vector_store (VectorStore): The vector store instance for retrieval.
-        """
         self.vector_store = vector_store
         if settings.gemini_api_key:
             genai.configure(api_key=settings.gemini_api_key)
@@ -24,7 +15,6 @@ class QAService:
             self.model = None
     
     def create_prompt(self, question: str, context: str) -> str:
-        """Construct the RAG prompt with context and instructions."""
         return f"""You are a helpful assistant answering questions based on provided context.
 
 Context:
@@ -41,16 +31,6 @@ Instructions:
 Answer:"""
     
     def generate_answer(self, question: str, max_chunks: int = 5) -> Dict:
-        """
-        Generate an answer to a question using RAG.
-        
-        Args:
-            question (str): The user's question.
-            max_chunks (int, optional): Max number of chunks to retrieve. Defaults to 5.
-            
-        Returns:
-            Dict: Dictionary containing the answer, sources, and confidence score.
-        """
         search_results = self.vector_store.search(query=question, num_results=max_chunks)
         
         if not search_results:
