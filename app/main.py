@@ -31,6 +31,12 @@ qa_service = QAService(vector_store)
 
 @app.get("/health")
 async def health_check():
+    """
+    Health check endpoint to verify system status.
+    
+    Returns:
+        dict: Status message indicating the API is running.
+    """
     return {
         "status": "healthy",
         "message": "RAG Q&A System is running"
@@ -39,6 +45,22 @@ async def health_check():
 
 @app.post("/upload", response_model=DocumentUploadResponse)
 async def upload_document(file: UploadFile = File(...)):
+    """
+    Upload and process a document (PDF, TXT, DOCX).
+    
+    Validates file type and size, extracts text, chunks it, and stores 
+    embeddings in the vector database.
+    
+    Args:
+        file (UploadFile): The uploaded file object.
+        
+    Returns:
+        DocumentUploadResponse: Metadata about the processed document including doc_id.
+        
+    Raises:
+        HTTPException: If file type is unsupported, file is too large, 
+                       or processing fails.
+    """
     allowed_extensions = {".pdf", ".txt", ".docx"}
     file_extension = Path(file.filename).suffix.lower()
     
@@ -92,6 +114,21 @@ async def upload_document(file: UploadFile = File(...)):
 
 @app.post("/ask", response_model=AnswerResponse)
 async def ask_question(request: QuestionRequest):
+    """
+    Ask a question based on uploaded documents.
+    
+    Retrieves relevant context from the vector store and uses the LLM
+    to generate an answer with source citations.
+    
+    Args:
+        request (QuestionRequest): The question and optional configuration.
+        
+    Returns:
+        AnswerResponse: The generated answer, sources, and confidence score.
+        
+    Raises:
+        HTTPException: If answer generation fails.
+    """
     try:
         result = qa_service.generate_answer(
             question=request.question,
@@ -106,6 +143,15 @@ async def ask_question(request: QuestionRequest):
 
 @app.get("/documents")
 async def list_documents():
+    """
+    List all uploaded documents available in the vector store.
+    
+    Returns:
+        dict: Total count and list of document metadata.
+        
+    Raises:
+        HTTPException: If listing documents fails.
+    """
     try:
         documents = vector_store.list_documents()
         return {

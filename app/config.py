@@ -2,6 +2,11 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    """
+    Application configuration settings.
+    
+    Loads configuration from environment variables and .env file.
+    """
     gemini_api_key: str = ""
     
     upload_dir: str = "./uploads"
