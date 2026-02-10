@@ -1,48 +1,45 @@
-# Design Decisions & Architecture
+# Design Architecture & Decisions
 
-## 1. Core Architecture
+## 1. System Architecture
 
-The system is built as a lightweight, stateless microservice using **FastAPI** to orchestrate the RAG (Retrieval-Augmented Generation) pipeline.
+The recommendation system utilizes a **Retrieval-Augmented Generation (RAG)** pipeline orchestrated via a stateless microservice. The architecture prioritizes local execution for the retrieval phase to minimize latency and operational complexity, while leveraging cloud-based LLMs for high-quality generation.
 
-### Components
+### Core Components
 
-- **API Layer (FastAPI)**: Handles request/response validation, file uploads, and error handling. Chosen for its native asynchronous capabilities and automatic OpenAPI documentation.
-- **Vector Store (ChromaDB)**: An embedded vector database running locally.
-  - _Rationale_: ChromaDB requires no external server process (unlike PostgreSQL/pgvector or Elasticsearch), allowing this project to be "clone-and-run" compatible.
-- **LLM Provider (Google Gemini)**: Used for the generation phase.
-  - _Rationale_: Gemini offers a generous free tier and large context window (1M+ tokens), making it superior for development and testing compared to OpenAI's strictly metered availability.
+- **FastAPI (Application Layer)**: Selected for its asynchronous request handling and native Pydantic integration, ensuring strict type safety and high throughput for concurrent requests.
+- **ChromaDB (Vector Store)**: Implemented as an embedded vector database. This design choice eliminates the need for external database infrastructure (e.g., PostgreSQL/Elasticsearch), facilitating rapid deployment and simplifying the development environment.
+- **Google Gemini (Generation Layer)**: Utilized for response generation. The model's large context window allows for extensive document retrieval without truncation, providing superior reasoning capabilities compared to smaller open-source alternatives.
 
 ## 2. RAG Pipeline Implementation
 
-The pipeline follows a standard "Retrieve-Then-Generate" flow:
+The information retrieval process follows a strictly defined pipeline to ensure relevance and accuracy.
 
-1.  **Ingestion & Chunking**:
-    - Files (PDF, TXT, DOCX) are parsed into raw text.
-    - **Strategy**: Text is split into **500-word chunks** with a **50-word overlap**.
-    - _Why?_ 500 words provide enough context for the LLM to answer complex questions, while the overlap prevents information loss at chunk boundaries.
+### 2.1 Ingestion & Processing
 
-2.  **Embedding**:
-    - We use the `sentence-transformers/all-MiniLM-L6-v2` model locally.
-    - _Why?_ Using a local embedding model eliminates API costs and latency for the vectorization step. The model is small (~80MB) and runs efficiently on standard CPUs.
+Documents are processed through a multi-stage pipeline:
 
-3.  **Retrieval**:
-    - Queries are embedded using the same model.
-    - ChromaDB performs a standard **Cosine Similarity** search to find the top 5 most relevant chunks.
+1.  **Extraction**: Text is extracted from source formats (PDF, DOCX, TXT) using specialized parsers.
+2.  **Chunking**: Content is segmented into **500-word windows** with a **50-word overlap**. This granularity balances semantic completeness with retrieval precision, ensuring that the model receives sufficient context without dilution.
 
-4.  **Generation**:
-    - A strict system prompt is constructed combining the User Query + Retrieved Context.
-    - The LLM is instructed to answer _strictly_ based on the context to minimize hallucinations.
+### 2.2 Vectorization & Retrieval
 
-## 3. Trade-offs & Limitations
+- **Local Embedding Model**: The system employs `sentence-transformers/all-MiniLM-L6-v2` for generating vector embeddings. Running this model locally avoids external API dependencies for the embedding step, significantly reducing per-request latency and operating costs.
+- **Semantic Search**: Retrieval is performed via Cosine Similarity search within ChromaDB, returning the top-k most relevant text chunks.
 
-- **Local Persistence**: Vector data is stored in the `./data` directory. This is not suitable for horizontal scaling (multiple API instances cannot reliably share the same SQLite-backed Chroma file).
-- **Synchronous Processing**: Large file uploads block the request thread until processing is complete. A production version would use background tasks (Celery/Redis).
+### 2.3 Contextual Generation
 
-## 4. Future Roadmap
+The generation phase uses a strictly engineered system prompt that binds the LLM's response to the retrieved context. This constraint minimizes hallucination by forcing the model to cite information solely from the provided documents.
 
-To move this system to production, the following improvements are recommended:
+## 3. Deployment Constraints & Roadmap
 
-1.  **Containerization**: Dockerize the application for consistent deployment.
-2.  **Remote Vector Store**: Migrate ChromaDB to Client/Server mode or use a cloud provider (Pinecone/Weaviate).
-3.  **Authentication**: Add API Key or OAuth2 protection to endpoints.
-4.  **Async Ingestion**: Offload document processing to a background worker queue.
+### Current Limitations
+
+- **Vertical Scalability**: The current usage of embedded ChromaDB restricts the system to a single instance.
+- **Synchronous Ingestion**: Large file processing blocks the main thread in the current implementation.
+
+### Future Improvements
+
+1.  **Containerization**: Implement Docker support for consistent deployment environments.
+2.  **Distributed Vector Store**: Migration to a client-server vector database architecture for horizontal scaling.
+3.  **Asynchronous Processing**: Integration of a task queue (e.g., Celery) for background document ingestion.
+4.  **Security Layer**: Implementation of API Key authentication or OAuth2 for endpoint protection.
