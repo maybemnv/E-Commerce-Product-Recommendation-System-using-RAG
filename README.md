@@ -15,6 +15,8 @@ A document-based Question & Answering system using Retrieval-Augmented Generatio
 - **LLM**: Google Gemini (gemini-2.5-flash-lite)
 - **Embeddings**: Sentence Transformers (all-MiniLM-L6-v2)
 
+For a detailed breakdown of architectural choices, see [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md).
+
 ## Setup
 
 1.  **Clone & Install**
